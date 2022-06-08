@@ -3,18 +3,25 @@ package hello.jdbc.repository;
 import hello.jdbc.connection.DBConnectionUtil;
 import hello.jdbc.domain.Member;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.support.JdbcUtils;
 
-import javax.xml.transform.Result;
+import javax.sql.DataSource;
 import java.sql.*;
 import java.util.NoSuchElementException;
 
 import static hello.jdbc.connection.ConnectionConst.*;
 
 @Slf4j
-public class MemberRepositoryV0 {
+public class MemberRepositoryV1 {
+
+    private final DataSource dataSource;
+
+    public MemberRepositoryV1(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
 
     public Member save(Member member) throws SQLException {
-        Connection connection = DBConnectionUtil.getConnection();
+        Connection connection = dataSource.getConnection();
         PreparedStatement preparedStatement = null;
         String sql = "insert into member(member_id, money) values (?, ?)";
         ResultSet rs = null;
@@ -46,7 +53,7 @@ public class MemberRepositoryV0 {
         ResultSet rs = null;
 
         try {
-            connection = DBConnectionUtil.getConnection();
+            connection = dataSource.getConnection();
             ps = connection.prepareStatement("select * from member where member_id = ?");
             ps.setString(1, member_id);
 
@@ -72,7 +79,7 @@ public class MemberRepositoryV0 {
         Connection connection = null;
         PreparedStatement pstmt = null;
         try {
-            connection = DBConnectionUtil.getConnection();
+            connection = dataSource.getConnection();
             pstmt = connection.prepareStatement(sql);
             pstmt.setInt(1, money);
             pstmt.setString(2, memberId);
@@ -92,7 +99,7 @@ public class MemberRepositoryV0 {
         PreparedStatement pstm = null;
         String sql = "delete from member where member_id = ?";
         try {
-            conn = DBConnectionUtil.getConnection();
+            conn = dataSource.getConnection();
             pstm = conn.prepareStatement(sql);
             pstm.setString(1, memberId);
 
@@ -108,17 +115,14 @@ public class MemberRepositoryV0 {
     }
 
     private void close(Connection connection, PreparedStatement preparedStatement, ResultSet rs) throws SQLException {
-        if (rs != null) {
-            rs.close();
-        }
+        JdbcUtils.closeResultSet(rs);
+        JdbcUtils.closeStatement(preparedStatement);
+        JdbcUtils.closeConnection(connection);
+    }
 
-        if (preparedStatement != null) {
-            preparedStatement.close();
-        }
-
-        if (connection != null) {
-            connection.close();
-        }
-
+    private Connection getConnection() throws SQLException {
+        Connection con = dataSource.getConnection();
+        log.info("get connection={}, class={}", con, con.getClass());
+        return con;
     }
 }

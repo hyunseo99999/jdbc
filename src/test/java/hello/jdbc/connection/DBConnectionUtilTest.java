@@ -18,7 +18,6 @@ class DBConnectionUtilTest {
     @Test
     void connection() throws SQLException {
         Connection connection = DBConnectionUtil.getConnection();
-
         Assertions.assertThat(connection).isNotNull();
 
     }
